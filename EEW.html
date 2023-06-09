@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style type="text/css">
+    @font-face {
+      font-family: 'font'; /* フォント名 */
+      /* フォーマットごとにパスを指定 */
+      src: url('./モトヤLシーダ3等幅.ttf') format('truetype');
+    }
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    p{
+      color          : #ffffff;
+      font-family: 'font';
+      font-size: 75px;
+      text-shadow    : 
+            4px  4px 2px #000000,
+            -4px  4px 2px #000000,
+            4px -4px 2px #000000,
+            -4px -4px 2px #000000,
+            4px  0px 2px #000000,
+            0px  4px 2px #000000,
+            -4px  0px 2px #000000,
+            0px -4px 2px #000000;
+          margin: 0px;
+          line-height: 82px;
+      }
+      .title{
+      position: absolute;
+      text-align: center;
+      width: 1912px;
+      top: 9%;
+    }
+    .main{
+      width: 1200px;
+      position: absolute;
+      top: 9%;
+      left: 18.5%;
+      transform: scale(0.95, 1);
+    }
+    .main2{
+      width: 1200px;
+      position: absolute;
+      top: 16%;
+      left: 18.5%;
+      transform: scale(0.95, 1);
+    }
+    .hidden{
+      display: none;
+    }
+    .combined-character {
+      font-size: 12px;
+      line-height: 1;
+      display: inline-block;
+    }
+    .leaflet-top.leaflet-left, .leaflet-top.leaflet-right {
+      display: none;
+    }
+    .wrapper {
+      position: relative;
+      height: 1080px;
+      width: 1920px;
+    }
+    .wrapper1 {
+      position: absolute;
+      right: 18%;
+      bottom: 7%;
+      height: 370px;
+      width: 480px;
+      background: white;
+    }
+    #map {
+      margin: 5px;
+      height: 360px;
+      width: 470px;
+    }
+    .title1 {
+      position: absolute;
+      top: -70px;
+      left: 0;
+      width: 280px;
+      height: 70px;
+      background-color: #665050;
+      border-radius: 30px 30px 0 0;
+      border: 2px white;
+    }
+    .titletext {
+      color          : #ffffff;
+      font-family: 'font';
+      font-size: 45px;
+      text-shadow    : 
+            3px 3px 2px #000000;
+      margin: 0px;
+      line-height: 65px;
+      text-align: center;
+    }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+  </head>
+  <body>
+    <p class="title hidden">Ｐ２Ｐ緊急地震速報</p>
+    <p class="main hidden" id="main">栃木県で地震　強い揺れ警戒</p>
+    <p class="main2 hidden" id="main2">関東</p>
+    <div class="wrapper hidden">
+      <div class="wrapper1">
+        <div class="title1">
+          <p class="titletext">緊急地震速報</p>
+        </div>
+        <div id="map" style=""></div>
+      </div>
+    </div>
+    <script>
+      var audio = new Audio('EEW.mp3');
+      const _sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const customBlink = document.querySelector('.title');
+      async function breaking() {
+        customBlink.classList.toggle('hidden');
+        audio.play();
+        await _sleep(1000)
+        customBlink.classList.toggle('hidden');
+        document.querySelector('.main').classList.toggle('hidden');
+        document.querySelector('.main2').classList.toggle('hidden');
+      }
+//--------------------------------------------------------------------------------------------
+/*
+fetch('./20230502石川.json')
+  .then(response => {
+    return response.json();
+  })
+  .then(data => {
+    console.log('Message from server', data);
+          console.log(data.code)
+              console.log(data);
+        if (data.code === 556) {
+          document.querySelector('p.main.hidden').textContent = data.earthquake.hypocenter.reduceName + 'で地震　強い揺れ警戒';
+          var uniquePrefs = new Set();
+
+          data.areas.forEach(function(area) {
+            if (area.pref) {
+              uniquePrefs.add(area.pref);
+            }
+          });
+          var spanElement = document.createElement('span');
+          spanElement.className = 'combined-character';
+          spanElement.innerHTML = '&#x307B;&#x304B;';
+          var result = Array.from(uniquePrefs).reduce(function (acc, current, index) {
+            var separator = (index === 0) ? "" : "　"; // 最初の要素以外は全角空白を挿入
+            if (acc.length + separator.length + current.length <= 14) {
+              return acc + separator + current;
+            } else {
+              if (acc.indexOf("🈀") == -1) {
+                return acc + "🈀";
+              }
+              return acc;
+            }
+          }, "");
+          
+          console.log(Array.from(uniquePrefs));  // 重複を無視した一意の"pref"の値の配列
+          console.log(result);
+          
+          document.querySelector('p.main2.hidden').textContent = result;
+          document.querySelector('.wrapper').classList.toggle('hidden');
+          breaking();
+//--------------------------------------------------------------------------------------------
+          var map = L.map('map').setView([35.6895, 139.6917], 7);
+          var geoJsonLayerGroup = L.layerGroup().addTo(map);
+          var bounds = null; // 初期化
+          L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/blank/{z}/{x}/{y}.png', {
+            attribution: '',
+            maxZoom: 7,
+            minZoom: 5
+          }).addTo(map);
+          var polygonData = {
+            "type": "Feature",
+            "geometry": {
+              "type": "Polygon",
+              "coordinates": [
+                [
+                  [120, 20],
+                  [160, 20],
+                  [160, 60],
+                  [120, 60]
+                ]
+              ]
+            }
+          };
+
+          // GeoJSONをレイヤーとして地図に追加
+          var polygonLayer = L.geoJSON(polygonData, {
+            style: {
+              fillColor: '#000050',
+              fillOpacity: 1,
+            }
+          }).addTo(map);
+          fetch("json/japan.geojson")
+            .then(function(response) {
+              return response.json();
+            })
+            .then(function(geoJsonData) {
+              var japan = L.geoJSON(geoJsonData, {
+                style: {
+                  fillColor: '#7C7B79',
+                  fillOpacity: 1,
+                  color: 'black',
+                  weight: 1
+                }
+              }).addTo(map);
+              var overlayMaps = {
+                "Polygon 1": japan,
+              };
+              L.control.layers(null, overlayMaps).addTo(map);
+
+              // ポリゴンレイヤー1を最前面に移動
+              japan.bringToBack();
+              polygonLayer.bringToBack();
+            })
+            .catch(function(error) {
+              console.log('Error:', error);
+            });
+
+          var geoJsonLayerGroup = L.layerGroup().addTo(map);
+
+          var geoJsonDataCache = {}; // GeoJSONデータのキャッシュ
+
+          data.areas.forEach(function(area) {
+            var pref = area.pref;
+            var name = area.name;
+
+            if (geoJsonDataCache[pref]) {
+              // キャッシュ済みのデータを使用してポリゴンを描画
+              filterAndDrawPolygon(geoJsonDataCache[pref], name);
+            } else {
+              // GeoJSONファイルのURLを生成
+              var geoJsonUrl = "json/" + pref + ".json";
+
+              fetch(geoJsonUrl)
+                .then(function(response) {
+                  return response.json();
+                })
+                .then(function(geoJsonData) {
+                  // キャッシュにデータを保存
+                  geoJsonDataCache[pref] = geoJsonData;
+
+                  // ポリゴンを描画
+                  filterAndDrawPolygon(geoJsonData, name);
+                })
+                .catch(function(error) {
+                  console.log('Error:', error);
+                });
+            }
+          });
+
+          function filterAndDrawPolygon(geoJsonData, targetName) {
+            var redL = L.geoJSON(geoJsonData, {
+              style: function(feature) {
+                if (feature.properties.name === targetName) {
+                  return {
+                    fillColor: 'red',
+                    fillOpacity: 1,
+                    color: 'black',
+                    weight: 1
+                  };
+                } else {
+                  return {
+                    fillColor: 'transparent',
+                    color: 'transparent',
+                    weight: 0
+                  };
+                }
+              }
+            }).addTo(geoJsonLayerGroup);
+          }
+          
+          var markerIcon = L.icon({
+            iconUrl: 'Shingen.png',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+            popupAnchor: [0, 0]
+          });
+          var hypocenter = data.earthquake.hypocenter;
+          var marker = L.marker([hypocenter.latitude, hypocenter.longitude], { icon: markerIcon }).addTo(map);
+          map.setView(L.latLng(hypocenter.latitude, hypocenter.longitude), 6);
+        }
+  })
+
+*/
+//-------------------------------------------------------------------------------------------
+
+
+      const socket = new WebSocket('wss://api.p2pquake.net/v2/ws')
+
+      socket.addEventListener('open', function (event) {
+         console.log('open');
+      });
+
+      // メッセージを待ち受ける
+      socket.addEventListener('message', function (event) {
+          var data = JSON.parse(event.data);
+          console.log('Message from server', data);
+          console.log(data.code)
+              console.log(data);
+        if (data.code === 556) {
+          document.querySelector('p.main.hidden').textContent = data.earthquake.hypocenter.reduceName + 'で地震　強い揺れ警戒';
+          var uniquePrefs = new Set();
+
+          data.areas.forEach(function(area) {
+            if (area.pref) {
+              uniquePrefs.add(area.pref);
+            }
+          });
+          var spanElement = document.createElement('span');
+          spanElement.className = 'combined-character';
+          spanElement.innerHTML = '&#x307B;&#x304B;';
+          var result = Array.from(uniquePrefs).reduce(function (acc, current, index) {
+            var separator = (index === 0) ? "" : "　"; // 最初の要素以外は全角空白を挿入
+            if (acc.length + separator.length + current.length <= 14) {
+              return acc + separator + current;
+            } else {
+              if (acc.indexOf("🈀") == -1) {
+                return acc + "🈀";
+              }
+              return acc;
+            }
+          }, "");
+          
+          console.log(Array.from(uniquePrefs));  // 重複を無視した一意の"pref"の値の配列
+          console.log(result);
+          
+          document.querySelector('p.main2.hidden').textContent = result;
+          document.querySelector('.wrapper').classList.toggle('hidden');
+          breaking();
+//--------------------------------------------------------------------------------------------
+          var map = L.map('map').setView([35.6895, 139.6917], 7);
+          var geoJsonLayerGroup = L.layerGroup().addTo(map);
+          var bounds = null; // 初期化
+          L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/blank/{z}/{x}/{y}.png', {
+            attribution: '',
+            maxZoom: 7,
+            minZoom: 5
+          }).addTo(map);
+          var polygonData = {
+            "type": "Feature",
+            "geometry": {
+              "type": "Polygon",
+              "coordinates": [
+                [
+                  [120, 20],
+                  [160, 20],
+                  [160, 60],
+                  [120, 60]
+                ]
+              ]
+            }
+          };
+
+          // GeoJSONをレイヤーとして地図に追加
+          var polygonLayer = L.geoJSON(polygonData, {
+            style: {
+              fillColor: '#000050',
+              fillOpacity: 1,
+            }
+          }).addTo(map);
+          fetch("json/japan.geojson")
+            .then(function(response) {
+              return response.json();
+            })
+            .then(function(geoJsonData) {
+              var japan = L.geoJSON(geoJsonData, {
+                style: {
+                  fillColor: '#7C7B79',
+                  fillOpacity: 1,
+                  color: 'black',
+                  weight: 1
+                }
+              }).addTo(map);
+              var overlayMaps = {
+                "Polygon 1": japan,
+              };
+              L.control.layers(null, overlayMaps).addTo(map);
+
+              // ポリゴンレイヤー1を最前面に移動
+              japan.bringToBack();
+              polygonLayer.bringToBack();
+            })
+            .catch(function(error) {
+              console.log('Error:', error);
+            });
+
+          var geoJsonLayerGroup = L.layerGroup().addTo(map);
+
+          var geoJsonDataCache = {}; // GeoJSONデータのキャッシュ
+
+          data.areas.forEach(function(area) {
+            var pref = area.pref;
+            var name = area.name;
+
+            if (geoJsonDataCache[pref]) {
+              // キャッシュ済みのデータを使用してポリゴンを描画
+              filterAndDrawPolygon(geoJsonDataCache[pref], name);
+            } else {
+              // GeoJSONファイルのURLを生成
+              var geoJsonUrl = "json/" + pref + ".json";
+
+              fetch(geoJsonUrl)
+                .then(function(response) {
+                  return response.json();
+                })
+                .then(function(geoJsonData) {
+                  // キャッシュにデータを保存
+                  geoJsonDataCache[pref] = geoJsonData;
+
+                  // ポリゴンを描画
+                  filterAndDrawPolygon(geoJsonData, name);
+                })
+                .catch(function(error) {
+                  console.log('Error:', error);
+                });
+            }
+          });
+
+          function filterAndDrawPolygon(geoJsonData, targetName) {
+            var redL = L.geoJSON(geoJsonData, {
+              style: function(feature) {
+                if (feature.properties.name === targetName) {
+                  return {
+                    fillColor: 'red',
+                    fillOpacity: 1,
+                    color: 'black',
+                    weight: 1
+                  };
+                } else {
+                  return {
+                    fillColor: 'transparent',
+                    color: 'transparent',
+                    weight: 0
+                  };
+                }
+              }
+            }).addTo(geoJsonLayerGroup);
+          }
+          
+          var markerIcon = L.icon({
+            iconUrl: 'Shingen.png',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+            popupAnchor: [0, 0]
+          });
+          var hypocenter = data.earthquake.hypocenter;
+          var marker = L.marker([hypocenter.latitude, hypocenter.longitude], { icon: markerIcon }).addTo(map);
+          map.setView(L.latLng(hypocenter.latitude, hypocenter.longitude), 6);
+        }
+      });
+    </script>
+  </body>
+</html>

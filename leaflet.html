@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaflet GeoJSON Polygon</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+  <style type="text/css">
+    .leaflet-left {
+      display: none;
+    }
+    .leaflet-container {
+      background: rgba(0, 0, 0, 0);
+      transform: rotate(345deg);
+    }
+    .blink {
+      opacity: 1;
+      transition: opacity 0s;
+    }
+
+    .blink.hidden {
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="map" style="height: 1000px;"></div>
+
+  <script>
+    // マップを作成
+    //var map = L.map('map').setView([35.6895, 139.6917], 7); // 中心の緯度経度とズームレベルを指定
+var map = L.map('map').setView([32.6895, 135.6917], 5); // 経度: 35.6895、緯度: 139.6917、ズームレベル: 5
+var polygonGroup = L.layerGroup().addTo(map);
+          var polygonData = {
+            "type": "Feature",
+            "geometry": {
+              "type": "Polygon",
+              "coordinates": [
+                [
+                  [120, 20],
+                  [120, 20],
+                  [120, 20],
+                  [120, 20]
+                ]
+              ]
+            }
+          };
+
+var polygonLayer = L.geoJSON(polygonData, {
+            style: {
+              fillColor: '#000050',
+              fillOpacity: 1,
+            }
+          }).addTo(map);
+ // GeoJSONを読み込み、ポリゴンを表示する関数
+      fetch("./json/japan.geojson")
+        .then(response => response.json())
+        .then(data => {
+          var japan = L.geoJSON(data, {
+            style: function(feature) {
+              // ポリゴンのスタイルを設定
+              return {
+                fillColor: '#A2A2A2',  // 塗りつぶしの色
+                fillOpacity: 1,    // 塗りつぶしの透明度
+                color: 'black',      // 線の色
+                weight: 1.5,           // 線の太さ
+                opacity: 1           // 線の透明度
+              };
+            }
+          }).addTo(map);
+          var overlayMaps = {
+            "Polygon 1": japan,
+          };
+          L.control.layers(null, overlayMaps).addTo(map);
+
+          // ポリゴンレイヤー1を最前面に移動
+          japan.bringToBack();
+          polygonLayer.bringToBack();
+        });
+fetch("https://api.p2pquake.net/v2/jma/tsunami?limit=1")
+  .then(response => response.json())
+  .then(data => {
+    console.log(data[0].areas)
+    for (var i = 0; i < data[0].areas.length; i++) {
+        var gra = data[0].areas[i].grade;
+    (function(url, gra) {
+      fetch(url)
+        .then(response => response.json())
+        .then(geojson => {
+          var apolygonLayer = L.geoJson(geojson, {
+            style: function(feature) {
+              if (gra == "MajorWarning") {
+                  return {
+                    className: 'blink',
+                    color: 'blue',
+                    weight: 5
+                  };
+                } else if (gra == "Warning"){
+                  return {
+                    className: 'blink',
+                    color: 'red',
+                    weight: 5
+                  };
+                } else if (gra == "Watch") {
+                  return {
+                    className: 'blink',
+                    color: 'yellow',
+                    weight: 5
+                  };
+                }
+              }
+          })
+          polygonGroup.addLayer(apolygonLayer);
+          polygonGroup.eachLayer(function(layer) {
+            layer.setStyle({ className: 'blink' });
+          });
+        });
+      })("./津波json/" + data[0].areas[i].name + ".json", gra);
+    }
+  });
+  setInterval(function(){
+    var blinkElements = document.getElementsByClassName('blink');
+    for (var i = 0; i < blinkElements.length; i++) {
+      blinkElements[i].classList.add('hidden');
+    }
+    setTimeout(function() {
+      for (var i = 0; i < blinkElements.length; i++) {
+        blinkElements[i].classList.remove('hidden');
+      }
+    },1000);
+  },2000);
+</script>
+</body>
+</html>
